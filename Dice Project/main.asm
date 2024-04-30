@@ -14,7 +14,7 @@ ExitProcess proto,dwExitCode:dword
 
 .data
 
-	diceCount dd 0,0,0,0,0,0
+	diceCount dd 2,2,2,2,2,2
 	diceState dd 4,5,6,1,2,3
 	playerScore dd 0
 
@@ -38,6 +38,8 @@ main proc
 	call rollDice
 	call printDice
 	call printScore
+	call countDice
+	call printDiceCount
 	call DumpRegs
 	
 	invoke ExitProcess,0
@@ -156,5 +158,77 @@ rollDice proc
 		ret
 
 rollDice endp
+
+determineScore proc
+	ret
+determineScore endp
+
+;this subroutine goes through diceState and counts the number of each die by incrementing the dice count in the array that corresponds with that specific number
+countDice proc
+
+	init:
+	;clearing current dice count
+	call clearDiceCount
+
+	;creating counter in ecx register and setting to 0
+	mov ecx, 0
+
+	start_loop:
+
+		;do something here
+		mov ebx, [diceState + ecx]
+		inc [diceCount + ebx * 4 - 4]
+
+
+
+		;increment counter by 4 
+		add ecx, 4
+		cmp ecx, 24
+		jl start_loop
+		jmp exit_loop
+	exit_loop:
+	ret
+
+countDice endp
+
+clearDiceCount proc
+
+	;creating counter in ecx register and setting to 0
+	mov ecx, 0
+	start_loop:
+
+		;do something here
+		mov [diceCount + ecx], 0;
+
+
+		;increment counter by 4 
+		add ecx, 4
+		cmp ecx, 24
+		jl start_loop
+		jmp exit_loop
+	exit_loop:
+	ret
+
+clearDiceCount endp
+
+printDiceCount proc
+
+	;creating counter in ecx register and setting to 0
+	mov ecx, 0
+	start_loop:
+
+		;do something here
+		mov eax, [diceCount + ecx];
+		call WriteInt
+
+		;increment counter by 4 
+		add ecx, 4
+		cmp ecx, 24
+		jl start_loop
+		jmp exit_loop
+	exit_loop:
+	ret
+	
+printDiceCount endp
 
 end main
