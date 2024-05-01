@@ -30,8 +30,19 @@ ExitProcess proto,dwExitCode:dword
 	sixDice db ' _______ ', 10, '| O   O |', 10, '| O   O |', 10,'|_O___O_|', 10, 0 
 
 	;this is the null terminated strings for game output
-	introPrompt db 'Welcome to my dice game. Please enter e to roll, q to quit!', 0
+	introPrompt db 'Welcome to my dice game.', 10, 0
+	roundPrompt db 'Please enter e to roll, q to quit!', 0
 	scorePrompt db 'Your Score: ', 0
+	exitPrompt db 'Thank you for playing!  ', 0
+	errorPrompt db 'Error, please put in either lowercase q to quit or e to play a round of dice.', 0
+	infoPrompt db 'Your dice roll is: ', 10, 0
+	twoOfKindPrompt db 'Two of a kind. 10 Points have been added to your score', 10, 0
+	threeOfKindPrompt db 'Three of a kind!  50 points have been added to your score', 10, 0
+	fourOfKindPrompt db 'Four of a kind!!  100 points have been added to your score', 10, 0
+	fiveOfKindPrompt db 'Five of a kind!!!  500 points have been added to your score', 10, 0
+	sixOfKindPrompt db 'Six of a kind!!!!  1000 points have been added to your score', 10, 0
+	straightPrompt db 'Straight!!!! 1000 points have been added to your score',  10, 0
+	fullHousePrompt db ' Full House!!! 1000 points have been added to your score',  10, 0
 
 
 .code
@@ -39,27 +50,67 @@ main proc
 
 	call runGame
 	
-	call DumpRegs
-	
 	invoke ExitProcess,0
 main endp
 
 runGame proc
 
-	;write prompt text for the game output
-	mov edx, offset introPrompt
-	call WriteString
+	init:
 
-	;getting input from the player
-	call readChar
-	mov currentChar, al
+		call Clrscr
 
-	;determining on continue game or quit
-	cmp
+		;write prompt text for the game output
+		mov edx, offset introPrompt
+		call WriteString
+		mov eax, 10
+		call WriteChar
+
+	getting_input:
+		;outputting prompt for roll
+		mov edx, offset roundPrompt
+		call WriteString
+		mov eax, 10
+		call WriteChar
+		;getting input from the player
+		call readChar
+		mov currentChar, al
+
+		;determining on continue game or quit
+		cmp currentChar, 'q'
+		je quit
+
+		cmp currentChar, 'e'
+		je play_round
+
+		mov edx, offset errorPrompt
+		call WriteString
+		mov eax, 10
+		call WriteChar
+
+		jmp getting_input
 	
+	play_round:
+		call Clrscr
+		call RollDice
+		call countDice
+		call printDice
+		mov eax, 10
+		call WriteChar
+		mov eax, 10
+		call WriteChar
+		call determineScore
+		call printScore
+		jmp getting_input		
 
 	quit:
 		mov edx, offset exitPrompt
+		call writeString
+
+		mov edx, offset scorePrompt
+		call writeString
+
+		mov edx, offset playerScore
+		call writeInt
 		ret
 
 runGame endp
@@ -179,7 +230,93 @@ rollDice proc
 rollDice endp
 
 determineScore proc
-	ret
+	determine_roll:
+		;determines if the roll is a full house
+		 call isFullHouse
+		 cmp eax, 1
+		 je full_house
+
+		 ;determines if the roll is a straight
+		 call isStraight
+		 cmp eax, 1
+		 je straight
+
+		;determines if the roll is a six of a kind
+		call sixOfKind
+		cmp eax, 1
+		je five_of_kind
+
+		;determines if the roll is a five of a kind
+		call fiveOfKind
+		cmp eax, 1
+		je five_of_kind
+
+		;determines if the roll is a four of a kind
+		call fourOfKind
+		cmp eax, 1
+		je four_of_kind
+
+		 ;determines if the roll is a three of a kind
+		call threeOfKind
+		cmp eax, 1
+		je three_of_kind
+
+		;determines if the roll is a two of a kind
+		call twoOfKind
+		cmp eax, 1
+		je two_of_kind
+
+		
+		
+		
+		;after checking all conditions and nothing happens, jump to end.
+		jmp exit_loop
+
+
+	two_of_kind:
+		mov edx, offset twoOfKindPrompt
+		call WriteString
+		add playerScore, 10
+		jmp exit_loop
+
+	three_of_kind:
+		mov edx, offset threeOfKindPrompt
+		call WriteString
+		add playerScore, 50
+		jmp exit_loop
+
+	four_of_kind:
+		mov edx, offset fourOfKindPrompt
+		call WriteString
+		add playerScore, 100
+		jmp exit_loop
+
+	five_of_kind:
+		mov edx, offset fiveOfKindPrompt
+		call WriteString
+		add playerScore, 500
+		jmp exit_loop
+
+	six_of_kind:
+		mov edx, offset sixOfKindPrompt
+		call WriteString
+		add playerScore, 1000
+		jmp exit_loop
+
+	full_house:
+		mov edx, offset fullHousePrompt
+		call WriteString
+		add playerScore, 1000
+		jmp exit_loop
+
+	straight:
+		mov edx, offset straightPrompt
+		call WriteString
+		add playerScore, 1000
+		jmp exit_loop
+
+	exit_loop:
+		ret
 determineScore endp
 
 ;this subroutine goes through diceState and counts the number of each die by incrementing the dice count in the array that corresponds with that specific number
@@ -276,7 +413,6 @@ twoOfKind proc
 
 
 	exit_loop:
-		call WriteInt
 		ret
 
 
@@ -308,7 +444,6 @@ threeOfKind proc
 
 
 	exit_loop:
-		call WriteInt
 		ret
 
 
@@ -340,7 +475,6 @@ fourOfKind proc
 
 
 	exit_loop:
-		call WriteInt
 		ret
 
 
@@ -372,7 +506,6 @@ fiveOfKind proc
 
 
 	exit_loop:
-		call WriteInt
 		ret
 
 
@@ -404,7 +537,6 @@ sixOfKind proc
 
 
 	exit_loop:
-		call WriteInt
 		ret
 
 sixOfKind endp
@@ -435,7 +567,6 @@ isStraight proc
 
 
 	exit_loop:
-		call WriteInt
 		ret
 	
 	
