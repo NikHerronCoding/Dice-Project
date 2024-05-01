@@ -15,8 +15,9 @@ ExitProcess proto,dwExitCode:dword
 .data
 
 	diceCount dd 2,2,2,2,2,2
-	diceState dd 4,5,6,1,2,3
+	diceState dd 1,1,2,2,3,3
 	playerScore dd 0
+	currentChar db ' '
 
 	cursorOffset db 0
 
@@ -29,21 +30,39 @@ ExitProcess proto,dwExitCode:dword
 	sixDice db ' _______ ', 10, '| O   O |', 10, '| O   O |', 10,'|_O___O_|', 10, 0 
 
 	;this is the null terminated strings for game output
+	introPrompt db 'Welcome to my dice game. Please enter e to roll, q to quit!', 0
 	scorePrompt db 'Your Score: ', 0
 
 
 .code
 main proc
 
-	call rollDice
-	call printDice
-	call printScore
-	call countDice
-	call printDiceCount
+	call runGame
+	
 	call DumpRegs
 	
 	invoke ExitProcess,0
 main endp
+
+runGame proc
+
+	;write prompt text for the game output
+	mov edx, offset introPrompt
+	call WriteString
+
+	;getting input from the player
+	call readChar
+	mov currentChar, al
+
+	;determining on continue game or quit
+	cmp
+	
+
+	quit:
+		mov edx, offset exitPrompt
+		ret
+
+runGame endp
 
 printDice proc
 	
@@ -197,7 +216,7 @@ clearDiceCount proc
 	mov ecx, 0
 	start_loop:
 
-		;do something here
+		;set diceount[ ecx / 4 ] to 0
 		mov [diceCount + ecx], 0;
 
 
@@ -217,7 +236,7 @@ printDiceCount proc
 	mov ecx, 0
 	start_loop:
 
-		;do something here
+		;call WriteInt on dice state
 		mov eax, [diceCount + ecx];
 		call WriteInt
 
@@ -230,5 +249,218 @@ printDiceCount proc
 	ret
 	
 printDiceCount endp
+
+twoOfKind proc
+
+	;creating counter in ecx register and setting to 0
+	mov ecx, 0
+
+	;start with 0 in eax - false value
+	mov eax, 0
+	start_loop:
+
+		;if diceCount[ecx] == 2 return 1
+		cmp diceCount[ecx], 2
+		je return_one;
+
+
+		;increment counter by 4 
+		add ecx, 4
+		cmp ecx, 24
+		jl start_loop
+		jmp exit_loop
+
+	return_one:
+		mov eax, 1
+		jmp exit_loop
+
+
+	exit_loop:
+		call WriteInt
+		ret
+
+
+twoOfKind endp
+
+threeOfKind proc
+
+	;creating counter in ecx register and setting to 0
+	mov ecx, 0
+
+	;start with 0 in eax - false value
+	mov eax, 0
+	start_loop:
+
+		;if diceCount[ecx] == 3 return 1
+		cmp diceCount[ecx], 3
+		je return_one;
+
+
+		;increment counter by 4 
+		add ecx, 4
+		cmp ecx, 24
+		jl start_loop
+		jmp exit_loop
+
+	return_one:
+		mov eax, 1
+		jmp exit_loop
+
+
+	exit_loop:
+		call WriteInt
+		ret
+
+
+threeOfKind endp
+
+fourOfKind proc
+
+	;creating counter in ecx register and setting to 0
+	mov ecx, 0
+
+	;start with 0 in eax - false value
+	mov eax, 0
+	start_loop:
+
+		;if diceCount[ecx] == 4 return 1
+		cmp diceCount[ecx], 4
+		je return_one;
+
+
+		;increment counter by 4 
+		add ecx, 4
+		cmp ecx, 24
+		jl start_loop
+		jmp exit_loop
+
+	return_one:
+		mov eax, 1
+		jmp exit_loop
+
+
+	exit_loop:
+		call WriteInt
+		ret
+
+
+fourOfKind endp
+
+fiveOfKind proc
+
+	;creating counter in ecx register and setting to 0
+	mov ecx, 0
+
+	;start with 0 in eax - false value
+	mov eax, 0
+	start_loop:
+
+		;if diceCount[ecx] == 5 return 1
+		cmp diceCount[ecx], 5
+		je return_one;
+
+
+		;increment counter by 4 
+		add ecx, 4
+		cmp ecx, 24
+		jl start_loop
+		jmp exit_loop
+
+	return_one:
+		mov eax, 1
+		jmp exit_loop
+
+
+	exit_loop:
+		call WriteInt
+		ret
+
+
+fiveOfKind endp
+
+sixOfKind proc
+
+	;creating counter in ecx register and setting to 0
+	mov ecx, 0
+
+	;start with 0 in eax - false value
+	mov eax, 0
+	start_loop:
+
+		;if diceCount[ecx] == 6 return 1
+		cmp diceCount[ecx], 6
+		je return_one;
+
+
+		;increment counter by 4 
+		add ecx, 4
+		cmp ecx, 24
+		jl start_loop
+		jmp exit_loop
+
+	return_one:
+		mov eax, 1
+		jmp exit_loop
+
+
+	exit_loop:
+		call WriteInt
+		ret
+
+sixOfKind endp
+
+isStraight proc
+
+	;creating counter in ecx register and setting to 0
+	mov ecx, 0
+
+	;start with 1 in eax
+	mov eax, 1
+	start_loop:
+
+		;if !diceCount[ecx] == 1 return 0
+		cmp diceCount[ecx], 1
+		jne return_zero;
+
+
+		;increment counter by 4 
+		add ecx, 4
+		cmp ecx, 24
+		jl start_loop
+		jmp exit_loop
+
+	return_zero:
+		mov eax, 0
+		jmp exit_loop
+
+
+	exit_loop:
+		call WriteInt
+		ret
+	
+	
+isStraight endp
+
+isFullHouse proc
+
+	twoCheck:
+		call twoOfKind
+		cmp eax, 0
+		je return_zero
+		jmp threeCheck
+
+	threeCheck:
+		call threeOfKind
+		cmp eax, 0
+		je return_zero
+		mov eax, 1
+		ret
+
+	return_zero:
+		mov eax, 0
+		ret
+
+isFullHouse endp
+
 
 end main
