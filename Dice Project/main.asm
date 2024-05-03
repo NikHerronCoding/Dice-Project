@@ -13,13 +13,13 @@ Include Irvine32.inc
 ExitProcess proto,dwExitCode:dword
 
 .data
-
+	
+	;this is to store the data for the game state
 	diceCount dd 2,2,2,2,2,2
 	diceState dd 1,1,2,2,3,3
 	playerScore dd 0
 	currentChar db ' '
 
-	cursorOffset db 0
 
 	; this is the ascii art for dice side one through six
 	oneDice db ' _______ ', 10, '|       |', 10, '|   O   |', 10,'|_______|', 10, 0
@@ -52,6 +52,12 @@ main proc
 	
 	invoke ExitProcess,0
 main endp
+
+;this subroutine is responsible for the execution and logic of the game the logic is as follows:
+; run init - calls clear screen and writes the prompt for the start of the game
+; gets input from the user, validates the response and then executes based on what the input is (q: quit e:roll)
+;calls playRound which rolls the dice, prints the dice to screen and performs logic to determine the amount of points to add
+;when the game is complete, the quit label is used in which the program outputs the exit prompt and ends the game
 
 runGame proc
 
@@ -115,6 +121,7 @@ runGame proc
 
 runGame endp
 
+;this subroutine iterates through the diceState and outputs each dice that currently exists. Uses a simple set of comparisons to determine which subroutine to call
 printDice proc
 	
 	;using ecx as counter, set counter to 0
@@ -142,7 +149,7 @@ printDice proc
 		cmp eax, 6
 		je print_six
 
-		;section that compares the current counter to the count that would represent index 6
+		;section that compares the current counter to the count that would represent index 6 (24 bytes since an int is 4 bytes long)
 		loop_compare:
 			add ecx, 4
 			cmp ecx, 24
@@ -185,6 +192,7 @@ printDice proc
 
 printDice endp
 
+;this subroutine outputs the score to console from the global data "playerScore"
 printScore proc
 	mov eax, 10
 	call WriteChar
@@ -201,6 +209,7 @@ printScore proc
 	ret
 printScore endp
 
+;This subroutine simulates the roll of dice to give each dice a random number between 1 and 6. This function uses the Irvine function: Random32.
 rollDice proc
 
 	;using ecx as counter and setting to 0
@@ -229,6 +238,7 @@ rollDice proc
 
 rollDice endp
 
+;this is probably the most complicated subrouting in this project.This function determines what points the roll is worth by checking for each kind of scoring roll
 determineScore proc
 	determine_roll:
 		;determines if the roll is a full house
@@ -266,9 +276,6 @@ determineScore proc
 		cmp eax, 1
 		je two_of_kind
 
-		
-		
-		
 		;after checking all conditions and nothing happens, jump to end.
 		jmp exit_loop
 
@@ -335,8 +342,6 @@ countDice proc
 		mov ebx, [diceState + ecx]
 		inc [diceCount + ebx * 4 - 4]
 
-
-
 		;increment counter by 4 
 		add ecx, 4
 		cmp ecx, 24
@@ -347,6 +352,7 @@ countDice proc
 
 countDice endp
 
+;this subroutine resets the DiceCount
 clearDiceCount proc
 
 	;creating counter in ecx register and setting to 0
@@ -367,6 +373,7 @@ clearDiceCount proc
 
 clearDiceCount endp
 
+;this subroutine is a diagnostic tool to determine if the computer properly counts the state of the dice roll. Was very helpful.
 printDiceCount proc
 
 	;creating counter in ecx register and setting to 0
@@ -387,6 +394,7 @@ printDiceCount proc
 	
 printDiceCount endp
 
+;this subroutine checks if there is a two of a kind present in the dice roll (the count of any dice is equal to 2)
 twoOfKind proc
 
 	;creating counter in ecx register and setting to 0
@@ -418,6 +426,7 @@ twoOfKind proc
 
 twoOfKind endp
 
+;this subroutine checks if there is a three of a kind present in the dice roll (the count of any dice is equal to 3)
 threeOfKind proc
 
 	;creating counter in ecx register and setting to 0
@@ -449,6 +458,7 @@ threeOfKind proc
 
 threeOfKind endp
 
+;this subroutine checks if there is a four of a kind present in the dice roll (the count of any dice is equal to 4)
 fourOfKind proc
 
 	;creating counter in ecx register and setting to 0
@@ -480,6 +490,7 @@ fourOfKind proc
 
 fourOfKind endp
 
+;this subroutine checks if there is a two of a kind present in the dice roll (the count of any dice is equal to 5)
 fiveOfKind proc
 
 	;creating counter in ecx register and setting to 0
@@ -511,6 +522,7 @@ fiveOfKind proc
 
 fiveOfKind endp
 
+;this subroutine checks if there is a six of a kind present in the dice roll (the count of any dice is equal to 6)
 sixOfKind proc
 
 	;creating counter in ecx register and setting to 0
@@ -541,6 +553,7 @@ sixOfKind proc
 
 sixOfKind endp
 
+;this subroutine checks if there is a straight present in the dice roll (the count of all dice is equal to 1)
 isStraight proc
 
 	;creating counter in ecx register and setting to 0
@@ -572,6 +585,8 @@ isStraight proc
 	
 isStraight endp
 
+
+;this subroutine checks if there is a full house present in the dice roll (the count of any dice is equal to 2 and there is a 3 of a kind of another)
 isFullHouse proc
 
 	twoCheck:
